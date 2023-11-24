@@ -1,0 +1,24 @@
+DELETE http://localhost:8081/api/v1/user/16
+
+###
+POST http://localhost:8081/api/v1/user
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "DC3582",
+  "name": "Cahyono",
+  "email": "c@gmail.com",
+  "phone": "+62895338083455"
+}
+
+
+###
+GET http://localhost:8081/api/v1/users
+Content-Type: application/json
+Accept: application/json
+
+###
+GET http://localhost:8081/api/v1/user/DC3582
+Content-Type: application/json
+Accept: application/json
