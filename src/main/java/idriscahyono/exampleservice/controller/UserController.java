@@ -1,34 +1,32 @@
 package idriscahyono.exampleservice.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import idriscahyono.exampleservice.base.BaseService;
+import idriscahyono.exampleservice.entity.Document;
 import idriscahyono.exampleservice.entity.User;
+import idriscahyono.exampleservice.entity.UserProfile;
 import idriscahyono.exampleservice.payload.request.CreateUserRequest;
 import idriscahyono.exampleservice.payload.response.ProfileServiceResponse;
 import idriscahyono.exampleservice.payload.response.UserDetailResponse;
-import idriscahyono.exampleservice.service.ProfileService;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.minio.ObjectWriteResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+
+import static idriscahyono.exampleservice.constant.Storage.MINIO_STORAGE;
 
 @Controller
 @RequestMapping("/api/v1")
 public class UserController extends BaseService {
-
-    @Autowired
-    ProfileService profileService;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
     @PostMapping(
             path = "/user",
             consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -75,11 +73,55 @@ public class UserController extends BaseService {
     }
 
     @DeleteMapping(path = "/user/{id}")
-    public ResponseEntity<String> delete(@PathVariable("id") @NotNull String id){
-        long pathId = Long.parseLong(id);
-
-        userRepository.deleteById(pathId);
+    public ResponseEntity<String> delete(@PathVariable("id") @NotNull Long id){
+        userRepository.deleteById(id);
 
         return ResponseEntity.status(HttpStatus.OK).body("OK");
+    }
+
+    @PostMapping(path = "/user/profile")
+    @ResponseBody
+    public ResponseEntity<String> uploadProfile(@RequestParam("file") MultipartFile file, @RequestParam("user_id") @NotNull Long user_id){
+        String originalFileName = file.getOriginalFilename();
+
+        Optional<User> userFindById = userRepository.findById(user_id);
+        if (userFindById.isEmpty()){
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("user_id not found");
+        }
+
+        ObjectWriteResponse responseMinio = minioService.uploadFile(file, "user-profile");
+
+        transactionOperations.executeWithoutResult(transactionStatus -> {
+            Document document = new Document();
+            document.setName(originalFileName);
+            document.setPath(responseMinio.object());
+            document.setStorage_type(MINIO_STORAGE);
+
+            documentRepository.save(document);
+
+            UserProfile userProfile = new UserProfile();
+            userProfile.setUser_id(user_id);
+            userProfile.setDocument_id(document.getId());
+
+            userProfileRepository.save(userProfile);
+        });
+
+        return ResponseEntity.status(HttpStatus.OK).body("OK");
+    }
+
+    @GetMapping(path = "/doc/{id}")
+    public ResponseEntity<byte[]> downloadFile(@PathVariable("id") @NotNull UUID id){
+        Optional<Document> getDocumentById = documentRepository.findById(id);
+        if (getDocumentById.isEmpty()){
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(null);
+        }
+
+        byte[] docFile = minioService.getFile(getDocumentById.get().getPath());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", getDocumentById.get().getName());
+
+        return ResponseEntity.status(HttpStatus.OK).headers(headers).body(docFile);
     }
 }
