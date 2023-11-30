@@ -8,7 +8,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.Date;
 
 @Entity
 @Setter
@@ -18,7 +17,6 @@ import java.util.Date;
 @Table(name = "users")
 @EntityListeners({AuditingEntityListener.class})
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -40,4 +38,8 @@ public class User {
     private Instant updated_at;
 
     private Timestamp deleted_at;
+
+    @OneToOne
+    @JoinColumn(name = "id", referencedColumnName = "user_id")
+    private UserProfile userProfile;
 }

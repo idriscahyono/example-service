@@ -7,6 +7,7 @@ import idriscahyono.exampleservice.repository.UserRepository;
 import idriscahyono.exampleservice.service.MinioServiceImpl;
 import idriscahyono.exampleservice.service.ProfileService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.support.TransactionOperations;
 
 public abstract class BaseService {
@@ -30,4 +31,7 @@ public abstract class BaseService {
 
     @Autowired
     protected MinioServiceImpl minioService;
+
+    @Value("${server.base_url}")
+    protected String serviceBaseUrl;
 }

@@ -4,6 +4,7 @@ import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.ObjectWriteResponse;
 import io.minio.PutObjectArgs;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import java.io.InputStream;
 import java.util.Objects;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class MinioServiceImpl implements MinioService {
 
@@ -53,7 +55,7 @@ public class MinioServiceImpl implements MinioService {
 
             return response;
         }catch (Exception e){
-            System.out.println("UPLOAD TO MINIO GOT ERROR" + e.getMessage());
+            log.error("upload to minio got error {}", e.getMessage(), e);
             return null;
         }
     }
@@ -70,7 +72,7 @@ public class MinioServiceImpl implements MinioService {
 
             return inputStream.readAllBytes();
         }catch (Exception e){
-            System.out.println("GET FILE FROM MINIO GOT ERROR" + e.getMessage());
+            log.error("get file from minio go error {}", e.getMessage(), e);
             return null;
         }
     }

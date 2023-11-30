@@ -1,5 +1,6 @@
 package idriscahyono.exampleservice.controller;
 
+import idriscahyono.exampleservice.base.BaseResponse;
 import idriscahyono.exampleservice.base.BaseService;
 import idriscahyono.exampleservice.entity.Document;
 import idriscahyono.exampleservice.entity.User;
@@ -33,7 +34,17 @@ public class UserController extends BaseService {
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     @ResponseBody
-    public CreateUserRequest createUser(@RequestBody @Validated CreateUserRequest request){
+    public ResponseEntity<BaseResponse> createUser(@RequestBody @Validated CreateUserRequest request){
+        Optional<User> findUserByUserName = userRepository.findFirstByUsername(request.getUsername());
+        if (findUserByUserName.isPresent()){
+            return ResponseEntity.status(HttpStatus.OK).body(
+                    BaseResponse.builder()
+                            .code(HttpStatus.UNPROCESSABLE_ENTITY.value())
+                            .message("Username already exist")
+                            .build()
+            );
+        }
+
         User user = new User();
         user.setUsername(request.getUsername());
         user.setName(request.getName());
@@ -42,23 +53,49 @@ public class UserController extends BaseService {
 
         userRepository.save(user);
 
-        return request;
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                BaseResponse.builder()
+                        .code(HttpStatus.CREATED.value())
+                        .message(HttpStatus.CREATED.getReasonPhrase())
+                        .build()
+        );
     }
 
     @GetMapping(path = "/users")
     @ResponseBody
-    public ResponseEntity<List<User>> getUsers(){
+    public ResponseEntity<BaseResponse> getUsers(){
         List<User> users = userRepository.findAll();
 
-        return ResponseEntity.status(HttpStatus.OK).body(users);
+        return ResponseEntity.status(HttpStatus.OK).body(
+                BaseResponse.builder()
+                        .code(HttpStatus.OK.value())
+                        .message(HttpStatus.OK.getReasonPhrase())
+                        .Data(users)
+                        .build()
+        );
     }
 
     @GetMapping(path = "user/{username}")
     @ResponseBody
-    public ResponseEntity<UserDetailResponse> getUserDetail(@PathVariable("username") @NotNull String username){
-        Optional<User> user = userRepository.findFirstByUsername(username);
+    public ResponseEntity<BaseResponse> getUserDetail(@PathVariable("username") @NotNull String username){
+        String userProfileUrl;
 
-        ProfileServiceResponse profileServiceResponse = profileService.getRandomProfileUser();
+        Optional<User> user = userRepository.findFirstByUsername(username);
+        if(user.isEmpty()){
+            return ResponseEntity.ok().body(
+                    BaseResponse.builder()
+                            .code(HttpStatus.UNPROCESSABLE_ENTITY.value())
+                            .message("Username not found")
+                            .build()
+            );
+        }
+
+        if (user.get().getUserProfile() != null){
+            userProfileUrl = serviceBaseUrl + "/api/v1/doc/view/" + user.get().getUserProfile().getDocument_id();
+        } else {
+            ProfileServiceResponse profileServiceResponse = profileService.getRandomProfileUser();
+            userProfileUrl = profileServiceResponse.getDownload_url();
+        }
 
         UserDetailResponse userDetailResponse = new UserDetailResponse();
         userDetailResponse.setId(user.get().getId());
@@ -66,10 +103,16 @@ public class UserController extends BaseService {
         userDetailResponse.setName(user.get().getName());
         userDetailResponse.setEmail(user.get().getEmail());
         userDetailResponse.setPhone(user.get().getPhone());
-        userDetailResponse.setProfile_url(profileServiceResponse.getDownload_url());
+        userDetailResponse.setProfile_url(userProfileUrl);
         userDetailResponse.setCreated_at(user.get().getCreated_at());
 
-        return ResponseEntity.status(HttpStatus.OK).body(userDetailResponse);
+        return ResponseEntity.status(HttpStatus.OK).body(
+                BaseResponse.builder()
+                        .code(HttpStatus.OK.value())
+                        .message(HttpStatus.OK.getReasonPhrase())
+                        .Data(userDetailResponse)
+                        .build()
+        );
     }
 
     @DeleteMapping(path = "/user/{id}")
@@ -81,12 +124,17 @@ public class UserController extends BaseService {
 
     @PostMapping(path = "/user/profile")
     @ResponseBody
-    public ResponseEntity<String> uploadProfile(@RequestParam("file") MultipartFile file, @RequestParam("user_id") @NotNull Long user_id){
+    public ResponseEntity<BaseResponse> uploadProfile(@RequestParam("file") MultipartFile file, @RequestParam("user_id") @NotNull Long user_id){
         String originalFileName = file.getOriginalFilename();
 
         Optional<User> userFindById = userRepository.findById(user_id);
         if (userFindById.isEmpty()){
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("user_id not found");
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(
+                    BaseResponse.builder()
+                            .code(HttpStatus.UNPROCESSABLE_ENTITY.value())
+                            .message("user not found")
+                            .build()
+            );
         }
 
         ObjectWriteResponse responseMinio = minioService.uploadFile(file, "user-profile");
@@ -106,7 +154,12 @@ public class UserController extends BaseService {
             userProfileRepository.save(userProfile);
         });
 
-        return ResponseEntity.status(HttpStatus.OK).body("OK");
+        return ResponseEntity.status(HttpStatus.OK).body(
+                BaseResponse.builder()
+                        .code(HttpStatus.OK.value())
+                        .message(HttpStatus.OK.getReasonPhrase())
+                        .build()
+        );
     }
 
     @GetMapping(path = "/doc/{id}")
@@ -121,6 +174,21 @@ public class UserController extends BaseService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("attachment", getDocumentById.get().getName());
+
+        return ResponseEntity.status(HttpStatus.OK).headers(headers).body(docFile);
+    }
+
+    @GetMapping(path = "/doc/view/{id}")
+    public ResponseEntity<byte[]> viewFile(@PathVariable("id") @NotNull UUID id){
+        Optional<Document> getDocumentById = documentRepository.findById(id);
+        if (getDocumentById.isEmpty()){
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(null);
+        }
+
+        byte[] docFile = minioService.getFile(getDocumentById.get().getPath());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.IMAGE_JPEG);
 
         return ResponseEntity.status(HttpStatus.OK).headers(headers).body(docFile);
     }

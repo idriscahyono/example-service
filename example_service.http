@@ -6,7 +6,7 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "username": "DC3582",
+  "username": "",
   "name": "Cahyono",
   "email": "c@gmail.com",
   "phone": "+62895338083455"

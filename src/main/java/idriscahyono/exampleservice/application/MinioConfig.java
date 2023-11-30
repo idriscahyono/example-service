@@ -17,12 +17,6 @@ public class MinioConfig {
     @Value("${minio.secretKey}")
     private String minioSecretKey;
 
-    @Value("${minio.defaultBucket}")
-    private String minioDefaultBucket;
-
-    @Value("${minio.defaultFolder}")
-    private String minioDefaultFolder;
-
     @Bean
     public MinioClient minioClient(){
         return MinioClient.builder()
