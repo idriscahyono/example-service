@@ -15,7 +15,6 @@ FROM openjdk:11-jre-slim
 
 ENV PROJECT_DIR=/spring-boot/app
 
-# Create project dir
 RUN mkdir -p $PROJECT_DIR/config
 
 WORKDIR $PROJECT_DIR

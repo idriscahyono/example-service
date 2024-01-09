@@ -1,37 +1,28 @@
-package idriscahyono.exampleservice.base;
+package idriscahyono.exampleservice.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import idriscahyono.exampleservice.repository.DocumentRepository;
 import idriscahyono.exampleservice.repository.UserProfileRepository;
 import idriscahyono.exampleservice.repository.UserRepository;
-import idriscahyono.exampleservice.service.MinioServiceImpl;
-import idriscahyono.exampleservice.service.ProfileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.support.TransactionOperations;
 
-public abstract class BaseService {
+public class AppService {
     @Autowired
     protected TransactionOperations transactionOperations;
-
     @Autowired
     protected UserRepository userRepository;
-
     @Autowired
     protected DocumentRepository documentRepository;
-
     @Autowired
     protected UserProfileRepository userProfileRepository;
-
-    @Autowired
-    protected ProfileService profileService;
-
     @Autowired
     protected ObjectMapper objectMapper;
-
     @Autowired
     protected MinioServiceImpl minioService;
-
     @Value("${server.base_url}")
     protected String serviceBaseUrl;
+    @Autowired
+    protected ProfileService profileService;
 }

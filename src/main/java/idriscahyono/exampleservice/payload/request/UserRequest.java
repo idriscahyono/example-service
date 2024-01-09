@@ -9,7 +9,7 @@ import javax.validation.constraints.NotEmpty;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateUserRequest {
+public class UserRequest {
 
     @NotEmpty(message = "is required")
     private String username;

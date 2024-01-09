@@ -47,3 +47,7 @@ tasks.named('test') {
 bootJar{
 	launchScript()
 }
+
+jar {
+	enabled = false
+}
