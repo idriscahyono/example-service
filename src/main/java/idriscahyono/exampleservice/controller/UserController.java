@@ -1,5 +1,6 @@
 package idriscahyono.exampleservice.controller;
 
+import idriscahyono.exampleservice.application.annotations.UsernameValid;
 import idriscahyono.exampleservice.base.BaseResponse;
 import idriscahyono.exampleservice.payload.request.UserRequest;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import javax.validation.constraints.NotNull;
 
 @Controller
 @RequestMapping("/api/v1/user")
+@Validated
 public class UserController extends AppController {
     @PostMapping
     public ResponseEntity<BaseResponse> createUser(@RequestBody @Validated UserRequest request){
@@ -30,8 +32,7 @@ public class UserController extends AppController {
     }
 
     @GetMapping(path = "/{username}")
-    @ResponseBody
-    public ResponseEntity<BaseResponse> getUserDetail(@PathVariable("username") @NotNull String username){
+    public ResponseEntity<BaseResponse> getUserDetail(@PathVariable("username") @NotNull @UsernameValid String username){
         BaseResponse result = userService.getUserDetailByUsername(username);
 
         return ResponseEntity.status(HttpStatus.OK).body(result);

@@ -18,8 +18,8 @@ public class BaseResponse {
     @JsonProperty("message")
     private String message;
 
-    @JsonProperty("error_validation")
-    private Map<String, List<String>> errorValidation;
+    @JsonProperty("errors")
+    private List<String> errorValidation;
 
     @JsonProperty("data")
     private Object Data;
