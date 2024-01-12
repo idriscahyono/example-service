@@ -21,14 +21,6 @@ import static idriscahyono.exampleservice.constant.Storage.MINIO_STORAGE;
 public class UserServiceImpl extends AppService implements UserService{
     @Override
     public BaseResponse create(UserRequest request) {
-        Optional<User> findUserByUserName = userRepository.findFirstByUsername(request.getUsername());
-        if (findUserByUserName.isPresent()){
-            return BaseResponse.builder()
-                    .code(HttpStatus.UNPROCESSABLE_ENTITY.value())
-                    .message("Username already exist")
-                    .build();
-        }
-
         User user = new User();
         user.setUsername(request.getUsername());
         user.setName(request.getName());
@@ -59,12 +51,6 @@ public class UserServiceImpl extends AppService implements UserService{
         String userProfileUrl;
 
         Optional<User> user = userRepository.findFirstByUsername(username);
-        if(user.isEmpty()){
-            return BaseResponse.builder()
-                            .code(HttpStatus.UNPROCESSABLE_ENTITY.value())
-                            .message("Username not found")
-                            .build();
-        }
 
         if (user.get().getUserProfile() != null){
             userProfileUrl = serviceBaseUrl + "/api/v1/doc/view/" + user.get().getUserProfile().getDocument_id();

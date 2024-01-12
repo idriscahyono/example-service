@@ -1,4 +1,4 @@
-package idriscahyono.exampleservice.application;
+package idriscahyono.exampleservice.application.config;
 
 import io.minio.MinioClient;
 import org.springframework.beans.factory.annotation.Value;
